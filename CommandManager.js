@@ -47,7 +47,7 @@ class CommandManager {
                 if(opts) {
                     if(opts.hasOwnProperty('argCount') && args.length - 1 != opts.argCount) {
                         if(opts.hasOwnProperty('helper'))
-                            msg.channel.sendMessage(`Usage : ${this.delimiter}${args[0]} ${opts.helper}`);
+                            msg.channel.sendMessage(`Usage : ${this.delimiter}${args[0]} ${typeof opts.helper == 'function' ? opts.helper(msg) : opts.helper}`);
                         else
                             msg.channel.sendMessage(`Usage incorrect de !${args[0]}. Aucune aide disponible ${Emojis.people.cry}`);
 
