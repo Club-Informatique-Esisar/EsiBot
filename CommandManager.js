@@ -21,12 +21,12 @@ class CommandManager {
     }
 
     static splitCommand(text) {
-        let regex = /'([\w\s]+)'|(\w+)/g;
+        let regex = /'([\w\s-\.@]+)'|"([\w\s-\.@]+)"|([\w-\.@]+)/g;
         let res = [];
         let m = null;
 
         while((m = regex.exec(text)) != null) {
-            res.push(m[1] || m[2]);
+            res.push(m[1] || m[2] || m[3]);
         }
 
         return res;
@@ -38,6 +38,9 @@ class CommandManager {
             if(!msg.content.startsWith(this.delimiter)) return;
 
             let text = msg.content.substr(1);
+            if(text.length == 0)
+                return;
+            
             let args = CommandManager.splitCommand(text);
             args[0] = args[0].toLowerCase();
             let command = this.commands.get(args[0]);

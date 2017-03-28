@@ -4,12 +4,12 @@ const Emojis = require('discord-emoji');
 class CGFun extends CommandGroup {
     constructor(manager) {
         super(manager);
-        manager.registerCommand('scramble', this, this.comScramble, {
+        /*manager.registerCommand('scramble', this, this.comScramble, {
             argCount: 0, helper: ''
         });
         manager.registerCommand('clearnames', this, this.comClearNames, {
             argCount: 0, helper: ''
-        });
+        });*/
     }
 
     comScramble(msg, args) {

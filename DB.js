@@ -4,7 +4,7 @@ let db = null;
 let url = 'mongodb://localhost:27017/esibot';
 
 MongoClient.connect(url, function(err, db_ins) {
-    if(err) console.log(`Error while connecting to the database: ${err}`);
+    if(err) return console.log(`Error while connecting to the database: ${err}`);
 
     console.log(`Successfully connected to the database!`);
     db = db_ins;
