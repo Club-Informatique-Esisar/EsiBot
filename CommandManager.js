@@ -4,6 +4,7 @@ const Emojis = require("discord-emoji");
 const CGGeneral    = require('./commands/General.js');
 const CGValidation = require('./commands/Validation.js');
 const CGFun        = require('./commands/Fun.js');
+const CGProfil     = require('./commands/Profil.js');
 
 class CommandManager {
     constructor(delimiter) {
@@ -13,6 +14,7 @@ class CommandManager {
         new CGGeneral(this);
         new CGValidation(this);
         new CGFun(this);
+        new CGProfil(this);
     }
 
     registerCommand(name, ctx, handler, opts) {
