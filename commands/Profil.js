@@ -19,7 +19,7 @@ class CGProfil extends CommandGroup {
         if(args.length < 2)
             return msg.channel.sendMessage("Pas assez d'arguments... Voire l'aide pour plus d'infos.");
 
-        switch(args[1]) {
+        switch(args[1].toLowerCase()) {
             case "nom":
                 DB().collection('Students').updateOne({ clientID: msg.author.id, validated: true }, { $set: { name: args[2] } }, function(err, r) {
                     if(err) return console.log(err);
@@ -56,7 +56,7 @@ class CGProfil extends CommandGroup {
                 });
                 break;
             default:
-                return msg.channel.sendMessage(`${args[1]} : Opération inconnue !`);
+                return msg.channel.sendMessage(`${args[1]} : Opération inconnue. !aide pset pour plus d'infos !`);
         }
     }
 
