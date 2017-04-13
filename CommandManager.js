@@ -23,7 +23,7 @@ class CommandManager {
     }
 
     static splitCommand(text) {
-        let regex = /'([\w\s-\.@]+)'|"([\w\s-\.@]+)"|([\w-\.@]+)/g;
+        let regex = /'([\s\x21-\xff]+)'|"([\s\x21-\xff]+)"|([\x21-\xff]+)/g;
         let res = [];
         let m = null;
 
@@ -42,7 +42,7 @@ class CommandManager {
             let text = msg.content.substr(1);
             if(text.length == 0)
                 return;
-            
+
             let args = CommandManager.splitCommand(text);
             args[0] = args[0].toLowerCase();
             let command = this.commands.get(args[0]);
