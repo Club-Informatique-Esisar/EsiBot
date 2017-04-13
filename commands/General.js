@@ -1,6 +1,6 @@
 const CommandGroup = require('./CommandGroup.js');
 const DB = require('./../DB.js');
-const Constants = require('./../Constants.js');
+const Config = require('./../Config.js');
 const Emojis = require('discord-emoji');
 
 class CGGeneral extends CommandGroup {

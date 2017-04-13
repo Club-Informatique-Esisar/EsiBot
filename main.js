@@ -1,4 +1,4 @@
-Constants = require('./Constants.js');
+Config = require('./Config.js');
 const Discord = require('discord.js');
 const client = new Discord.Client();
 const emojis = require('discord-emoji');
@@ -9,12 +9,12 @@ let roles = {};
 client.on('ready', () => {
     console.log(`Successfully logged in as ${client.user.username}!`);
     for(let g of client.guilds) {
-        if(g[0] === Constants.EsiGuildID) {
-            Constants.EsiGuild = g[1];
+        if(g[0] === Config.EsiGuildID) {
+            Config.EsiGuild = g[1];
         }
     }
 
-    Constants.EsiGuild.roles.forEach(r => Constants.Roles[r.name] = r.id);
+    Config.EsiGuild.roles.forEach(r => Config.Roles[r.name] = r.id);
 });
 
 function listenWord(w) {

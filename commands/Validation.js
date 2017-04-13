@@ -1,7 +1,7 @@
 const CommandGroup = require('./CommandGroup.js');
 const DB = require('./../DB.js');
 const Mail = require('./../MailManager.js');
-const Constants = require('./../Constants.js');
+const Config = require('./../Config.js');
 const Emojis = require('discord-emoji');
 
 class CGValidation extends CommandGroup {
@@ -78,7 +78,7 @@ class CGValidation extends CommandGroup {
                 if(err) console.log("Error while updating client : " + err);
             });
 
-            msg.member.addRoles([Constants.Roles[student.promo], Constants.Roles['Validé']]).then(member => {
+            msg.member.addRoles([Config.Roles[student.promo], Config.Roles['Validé']]).then(member => {
                 msg.channel.sendMessage(`Tu as correctement été ajouté au groupe ${student.promo} ${member.user.username} !`);
             }).catch(console.error);
         });
@@ -86,7 +86,7 @@ class CGValidation extends CommandGroup {
 
     comValidate(msg, args) {
         let _this = this;
-        if(msg.member.roles.has(Constants.Roles['Validé'])) {
+        if(msg.member.roles.has(Config.Roles['Validé'])) {
             return msg.channel.sendMessage("Tu es déjà validé... Limiter ta consommation d'alcool tu devrais !");
         }
 

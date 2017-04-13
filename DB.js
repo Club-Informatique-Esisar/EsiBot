@@ -1,9 +1,9 @@
 const MongoClient = require('mongodb').MongoClient;
-const Constants = require('./Constants.js');
+const Config = require('./Config.js');
 
 let db = null;
 
-MongoClient.connect(Constants.DB_URL, function(err, db_ins) {
+MongoClient.connect(Config.DB_URL, function(err, db_ins) {
     if(err) return console.log(`Error while connecting to the database: ${err}`);
 
     console.log(`Successfully connected to the database!`);
