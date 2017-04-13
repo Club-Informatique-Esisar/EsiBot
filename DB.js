@@ -1,9 +1,9 @@
 const MongoClient = require('mongodb').MongoClient;
+const Constants = require('./Constants.js');
 
 let db = null;
-let url = 'mongodb://localhost:27017/esibot';
 
-MongoClient.connect(url, function(err, db_ins) {
+MongoClient.connect(Constants.DB_URL, function(err, db_ins) {
     if(err) return console.log(`Error while connecting to the database: ${err}`);
 
     console.log(`Successfully connected to the database!`);
