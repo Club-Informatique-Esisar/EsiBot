@@ -24,7 +24,7 @@ class CGValidation extends CommandGroup {
             return msg.channel.sendMessage("Ce n'est pas un mail de l'Esisar ! Si tu n'y a plus accès, contacte un @admin !");
         }
 
-        DB().collection('Students').find({ mail: args[1] }, function(err, student) {
+        DB().collection('Students').findOne({ mail: args[1] }, function(err, student) {
             if(err) return console.log(err);
             if(student == null)
                 return msg.channel.sendMessage("Mail inconnu au bataillon ! Si tu penses que c'est une erreur, contacte un @admin !");
