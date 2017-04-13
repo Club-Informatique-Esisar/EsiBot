@@ -72,17 +72,16 @@ class CGProfil extends CommandGroup {
             if(err) return console.log(err);
             if(student === null) return console.log("Personne non validée dans la BDD a le rôle 'Validé' !");
 
-            let profileText = "";
+            let profileText = `**${user.username}** s'apelle `;
 
             if(student.name) {
-                profileText = `Il ou elle s'apelle **${student.name}**`;
+                profileText += `**${student.name}**`;
             } else {
-                let mail = student.mail;
-                let noms = mail.split('@')[0].split('.');
+                let noms = student.mail.split('@')[0].split('.');
                 noms.forEach((n, i, t) => t[i] = n.charAt(0).toUpperCase() + n.slice(1));
-                profileText = `Il ou elle s'appelle **${noms[0]} ${noms[1]}**`;
+                profileText += `**${noms[0]} ${noms[1]}**`;
             }
-            profileText += ` et est en **${student.promo}** !`;
+            profileText += ` et est en **${student.promo}** !\n`;
 
             if(student.games) {
                 profileText += "\n\n__**Jeux :**__";
