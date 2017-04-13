@@ -1,5 +1,6 @@
 const CommandGroup = require('./CommandGroup.js');
 const DB = require('./../DB.js');
+const Config = require('./../Config.js');
 const Emojis = require('discord-emoji');
 
 class CGProfil extends CommandGroup {
@@ -65,7 +66,7 @@ class CGProfil extends CommandGroup {
         if(user === undefined)
             return msg.channel.sendMessage("Il faut mentionner l'utilisateur en précédant son pseudo par un @ !");
 
-        if(!Constants.EsiGuild.member(user).roles.has(Constants.Roles['Validé']))
+        if(!Config.EsiGuild.member(user).roles.has(Config.Roles['Validé']))
             return msg.channel.sendMessage("La personne n'est pas validée, impossible de savoir qui elle est " + Emojis.people.confused);
 
         DB().collection('Students').find({ clientID: user.id }).next(function(err, student) {
