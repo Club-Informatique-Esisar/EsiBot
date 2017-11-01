@@ -1,69 +1,76 @@
-const Emojis = require("discord-emoji");
-
-/* CG stands for Command Group */
-const CGGeneral    = require('./commands/General.js');
-const CGValidation = require('./commands/Validation.js');
-const CGFun        = require('./commands/Fun.js');
-const CGProfil     = require('./commands/Profil.js');
+let _ = require('lodash')
 
 class CommandManager {
-    constructor(delimiter) {
-        this.delimiter = delimiter;
-        this.commands = new Map();
+	constructor(delimiter) {
+    this.config = require('./Config')
+    this.delimiter = delimiter
+		this.commands = new Map()
+	}
 
-        new CGGeneral(this);
-        new CGValidation(this);
-        new CGFun(this);
-        new CGProfil(this);
+	registerCommand(name, handler, opts) {
+    if (name === undefined || name.trim() === '' || handler === undefined) {
+      return console.error(`Failed to load command : '${name}'`)
     }
 
-    registerCommand(name, ctx, handler, opts) {
-        this.commands.set(name, { ctx: ctx, handle: handler, options: opts });
-        console.log(`Command Registered : ${name}`);
-    }
+    opts = _.defaults(opts, {
+      variableArgs: false,
+      args: 0,
+      params: '',
+      desc: ''
+    })
 
-    static splitCommand(text) {
-        let regex = /'([\s\x21-\xff]+)'|"([\s\x21-\xff]+)"|([\x21-\xff]+)/g;
-        let res = [];
-        let m = null;
+		this.commands.set(name, {
+			handler: handler,
+			options: opts
+		})
+	}
 
-        while((m = regex.exec(text)) != null) {
-            res.push(m[1] || m[2] || m[3]);
+	static splitCommand(text) {
+		let regex = /'([\s\x21-\xff]+)'|"([\s\x21-\xff]+)"|([\x21-\xff]+)/g
+		let res = []
+		let m = null
+
+		while ((m = regex.exec(text)) != null) {
+			res.push(m[1] || m[2] || m[3])
+		}
+
+		return res
+	}
+
+	getListener() {
+		return msg => {
+			if (msg.author.bot ||
+        msg.channel.type === "dm" ||
+        !msg.content.startsWith(this.delimiter))
+        return
+
+			let text = msg.content.substr(1)
+			if (text.length == 0)
+				return;
+
+			let args = CommandManager.splitCommand(text)
+			args[0] = args[0].toLowerCase()
+			let command = this.commands.get(args[0])
+
+			if (command) {
+				if (command.options.variableArgs || command.options.args == args.length - 1) {
+					command.handler(msg, args, this).catch(console.err)
+				} else {
+          msg.channel.send(`Mauvaise utilisation de **!${args[0]}**.\nParamètres : *${command.options.params}*`)
         }
-
-        return res;
-    }
-
-    getListener() {
-        return msg => {
-            if(msg.author.bot) return;
-            if(!msg.content.startsWith(this.delimiter)) return;
-
-            let text = msg.content.substr(1);
-            if(text.length == 0)
-                return;
-
-            let args = CommandManager.splitCommand(text);
-            args[0] = args[0].toLowerCase();
-            let command = this.commands.get(args[0]);
-
-            if(command) {
-                let opts = command.options;
-                if(opts) {
-                    if(opts.hasOwnProperty('argCount') && args.length - 1 != opts.argCount) {
-                        if(opts.hasOwnProperty('helper'))
-                            msg.channel.sendMessage(`Usage : ${this.delimiter}${args[0]} ${typeof opts.helper == 'function' ? opts.helper(msg) : opts.helper}`);
-                        else
-                            msg.channel.sendMessage(`Usage incorrect de !${args[0]}. Aucune aide disponible ${Emojis.people.cry}`);
-
-                        return;
-                    }
-                }
-
-                command.handle.call(command.ctx, msg, args);
-            }
-        }
-    }
+			} else {
+        msg.channel.send(`Commande inconnue.`)
+      }
+		}
+	}
 }
 
-module.exports = CommandManager;
+let cm = new CommandManager("!")
+
+let commandsFolder = require("path").join(__dirname, "commands")
+require("fs").readdirSync(commandsFolder).forEach(function(file) {
+	require("./commands/" + file)(cm)
+	console.log(`[ComGroup] Loaded : '${file.substr(0, file.length-3)}'`)
+})
+
+module.exports = cm

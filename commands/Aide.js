@@ -1,26 +1,36 @@
-const CommandGroup = require('./CommandGroup.js');
-const DB = require('./../DB.js');
-const Config = require('./../Config.js');
-const Emojis = require('discord-emoji');
-
-class CGAide extends CommandGroup {
-    constructor(manager) {
-        super(manager);
-        manager.registerCommand('aide', this, this.comHelp, {
-            argCount: 1,
-            helper: '<Commande>'
-        });
-    }
-
-    comHelp(msg, args) {
-        let command = this.manager.commands.get(args[1]);
-        if(command && command.options && command.options.helper) {
-            msg.channel.sendMessage(`Usage : !${args[1]} ${command.options.helper}`);
-            return;
-        }
-
-        msg.channel.sendMessage(`Aucune aide disponible pour la commande '${args[1]}' ${Emojis.people.cry}`);
-    }
+async function helpCommand(msg, args, cm) {
+	let command = cm.commands.get(args[1])
+	if (command) {
+		/*msg.channel.send(`**!${args[1]}**
+\`\`\`
+Paramètres  : ${command.options.params}
+Description : ${command.options.desc}
+\`\`\``)*/
+    msg.channel.send({
+      "embed": {
+        "title": `**!${args[1]}**`,
+        "color": 0xa70096,
+        "fields": [
+          {
+            "name": "Description",
+            "value": command.options.desc
+          },
+          {
+            "name": "Paramètres",
+            "value": command.options.params
+          }
+        ]
+      }
+    })
+	} else {
+    msg.channel.send(`La commande **!${args[1]}** est inconnue.`)
+  }
 }
 
-module.exports = CGGeneral;
+module.exports = function (cm) {
+  cm.registerCommand('man', helpCommand, {
+    args: 1,
+    params: '<commande>',
+    desc: "Affiche les paramètres et la description d'une commande donnée."
+  })
+}
