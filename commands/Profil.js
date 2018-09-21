@@ -1,4 +1,6 @@
-function psetCommand(msg, args) {
+let Axios = require('axios')
+
+async function psetCommand(msg, args) {
   return msg.channel.send("En travaux.");
 
   if (args.length < 2)
@@ -15,54 +17,62 @@ function psetCommand(msg, args) {
   }
 }
 
-function profilCommand(msg, args) {
-  return msg.channel.send("En travaux.")
+async function profilCommand(msg, args, cm) {
+  let mentions = msg.mentions.members
+  if (mentions.size === 0) {
+    return msg.channel.send(`Il faut utiliser une mention !`)
+  }
 
-  let user = msg.mentions.users.array()[0]
-  if (user === undefined)
-  	return msg.channel.send("Il faut mentionner l'utilisateur en précédant son pseudo par un @ !")
+  let user = mentions.first()
+  let res = await Axios.post('/user/search', { search: { discordID: user.id } })
+  if (res.data.length !== 1) {
+    return msg.channel.send('Aucun résultat.')
+  }
 
-  if (!Config.EsiGuild.member(user).roles.has(Config.Roles['Validé']))
-  	return msg.channel.send("La personne n'est pas validée.")
+  let esiUser = res.data[0]
+  let fields = []
 
-  DB().collection('Students').find({ clientID: user.id }).next(function(err, student) {
-      if(err) return console.log(err)
-      if(student === null) return console.log("Personne non validée dans la BDD a le rôle 'Validé' !")
+  if (esiUser.firstName !== '' || esiUser.lastName !== '') {
+    fields.push({
+      name: 'Nom',
+      value: `${esiUser.firstName} ${esiUser.lastName}`
+    })
+  }
 
-      let profileText = `**${user.username}** s'apelle `
+  if (!esiUser.extern) {
+    fields.push({
+      name: 'Promo',
+      value: esiUser.promo.name
+    })
+  }
 
-      if(student.name) {
-          profileText += `**${student.name}**`
-      } else {
-          let noms = student.mail.split('@')[0].split('.')
-          noms.forEach((n, i, t) => t[i] = n.charAt(0).toUpperCase() + n.slice(1))
-          profileText += `**${noms[0]} ${noms[1]}**`
-      }
-      profileText += ` et est en **${student.promo}** !\n`
+  if (esiUser.clubs.length > 0) {
+    fields.push({
+      name: 'Clubs',
+      value: esiUser.clubs.reduce((l, v) => l + ' ' + v.name, '')
+    })
+  }
 
-      if(student.games) {
-          profileText += "\n\n__**Jeux :**__"
-          if(student.games.steam)
-              profileText += `\n*Steam* : ${student.games.steam}`
-          if(student.games.battlenet)
-              profileText += `\n*Battle.net* : ${student.games.battlenet}`
-          if(student.games.lol)
-              profileText += `\n*League of Legends* : ${student.games.lol}`
-          if(student.games.minecraft)
-              profileText += `\n*Minecraft* : ${student.games.minecraft}`
-      }
-
-      msg.channel.send(profileText)
+  msg.channel.send({
+    "embed": {
+      "description": `Profil de **${user.user.username}**`,
+      "color": cm.config.embedColor,
+      "fields": fields
+    }
   })
 }
 
 module.exports = function (cm) {
-  cm.registerCommand('profil', profilCommand, {
-    argCount: 1,
-    helper: '@pseudo'
+  cm.registerCommand({
+    name: 'profil',
+    handler: profilCommand,
+    args: 1,
+    params: '@pseudo'
   })
 
-  cm.registerCommand('pset', psetCommand, {
-    helper: '(nom|steam|battlenet|lol|minecraft) "valeur"'
+  cm.registerCommand({
+    name: 'pset',
+    handler: psetCommand,
+    params: '(nom|steam|battlenet|lol|minecraft) <valeur>'
   })
 }

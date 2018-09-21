@@ -29,10 +29,15 @@ function shuffle(a) {
 }
 
 module.exports = function (cm) {
-    /*cm.registerCommand('scramble', scrambleCommand, {
-        argCount: 0, helper: ''
+    /*
+    cm.registerCommand({
+      name: 'scramble',
+      handler: scrambleCommand
     })
-    cm.registerCommand('clearnames', clearNamesCommand, {
-        argCount: 0, helper: ''
-    })*/
+
+    cm.registerCommand({
+      name: 'clearnames',
+      handler: clearNamesCommand
+    })
+    */
 }

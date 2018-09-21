@@ -1,3 +1,5 @@
+let Raven = require('raven')
+let Emoji = require('node-emoji')
 let _ = require('lodash')
 
 class CommandManager {
@@ -7,22 +9,19 @@ class CommandManager {
 		this.commands = new Map()
 	}
 
-	registerCommand(name, handler, opts) {
-    if (name === undefined || name.trim() === '' || handler === undefined) {
-      return console.error(`Failed to load command : '${name}'`)
+	registerCommand(command) {
+    if (command.name === undefined || command.name.trim() === '' || command.handler === undefined) {
+      throw new Error(`Failed to load command : '${command.name}'`)
     }
 
-    opts = _.defaults(opts, {
+    command = _.defaults(command, {
       variableArgs: false,
       args: 0,
       params: '',
-      desc: ''
+      desc: '*Aucune description disponible*'
     })
 
-		this.commands.set(name, {
-			handler: handler,
-			options: opts
-		})
+		this.commands.set(command.name, command)
 	}
 
 	static splitCommand(text) {
@@ -46,17 +45,22 @@ class CommandManager {
 
 			let text = msg.content.substr(1)
 			if (text.length == 0)
-				return;
+				return
 
 			let args = CommandManager.splitCommand(text)
 			args[0] = args[0].toLowerCase()
 			let command = this.commands.get(args[0])
 
 			if (command) {
-				if (command.options.variableArgs || command.options.args == args.length - 1) {
-					command.handler(msg, args, this).catch(console.err)
+				if (command.variableArgs || command.args == args.length - 1) {
+					command.handler(msg, args, this)
+          .catch(err => {
+            //Raven.captureException(err)
+            console.log(err)
+            msg.channel.send(`${Emoji.get('boom')} Une erreur sauvage apparait. ${Emoji.get('boom')}\nSi le problème persiste, contactez un administrateur.`)
+          })
 				} else {
-          msg.channel.send(`Mauvaise utilisation de **!${args[0]}**.\nParamètres : *${command.options.params}*`)
+          msg.channel.send(`Mauvaise utilisation de **!${args[0]}**.\nParamètres : *${command.params}*`)
         }
 			} else {
         msg.channel.send(`Commande inconnue.`)
@@ -70,7 +74,7 @@ let cm = new CommandManager("!")
 let commandsFolder = require("path").join(__dirname, "commands")
 require("fs").readdirSync(commandsFolder).forEach(function(file) {
 	require("./commands/" + file)(cm)
-	console.log(`[ComGroup] Loaded : '${file.substr(0, file.length-3)}'`)
+	console.log(`[ComGroup] Loaded : '${file.substr(0, file.length - 3)}'`)
 })
 
 module.exports = cm

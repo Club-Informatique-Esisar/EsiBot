@@ -1,36 +1,56 @@
-async function helpCommand(msg, args, cm) {
+async function aideCommand(msg, args, cm) {
+  await msg.channel.send({
+    "embed": {
+      "title": `**Liste des commandes**`,
+      "color": cm.config.embedColor,
+      "description":
+        `Utilisez !man <commande> pour afficher l'aide spécifique à une commande.\n\n` +
+        Array.from(cm.commands.values()).reduce((l, v) => {
+          return l + `!${v.name} ${v.params}\n`
+        }, '')
+    }
+  })
+}
+
+async function manCommand(msg, args, cm) {
 	let command = cm.commands.get(args[1])
 	if (command) {
-		/*msg.channel.send(`**!${args[1]}**
-\`\`\`
-Paramètres  : ${command.options.params}
-Description : ${command.options.desc}
-\`\`\``)*/
-    msg.channel.send({
+    let fields = [{
+      "name": "Description",
+      "value": command.desc
+    }]
+
+    if (command.params !== '') {
+      fields.push({
+        "name": "Paramètres",
+        "value": command.params
+      })
+    }
+
+    await msg.channel.send({
       "embed": {
         "title": `**!${args[1]}**`,
-        "color": 0xa70096,
-        "fields": [
-          {
-            "name": "Description",
-            "value": command.options.desc
-          },
-          {
-            "name": "Paramètres",
-            "value": command.options.params
-          }
-        ]
+        "color": cm.config.embedColor,
+        "fields": fields
       }
     })
 	} else {
-    msg.channel.send(`La commande **!${args[1]}** est inconnue.`)
+    await msg.channel.send(`La commande **!${args[1]}** est inconnue.`)
   }
 }
 
 module.exports = function (cm) {
-  cm.registerCommand('man', helpCommand, {
+  cm.registerCommand({
+    name: 'aide',
+    handler: aideCommand,
+    desc: "Affiche la liste des commandes disponibles."
+  })
+
+  cm.registerCommand({
+    name: 'man',
+    handler: manCommand,
     args: 1,
     params: '<commande>',
-    desc: "Affiche les paramètres et la description d'une commande donnée."
+    desc: "Affiche les paramètres et la description d'une commande."
   })
 }
