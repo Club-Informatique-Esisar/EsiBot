@@ -1,3 +1,5 @@
+const Axios = require('axios')
+
 async function aideCommand({ msg, cm, colors }) {
   await msg.channel.send({
     embed: {
@@ -39,6 +41,15 @@ async function manCommand({ msg, args, cm, colors }) {
   }
 }
 
+async function listUsersCommand({ msg }) {
+  const response = await Axios.get('/user')
+  let liste = ''
+  response.data.forEach(user => {
+    liste += `- ${user.username}\n`
+  });
+  await msg.channel.send('**Liste des utilisateurs :**\n' + liste)
+}
+
 module.exports = function (cm) {
   cm.registerCommand({
     name: 'aide',
@@ -52,5 +63,11 @@ module.exports = function (cm) {
     args: 1,
     params: '<commande>',
     desc: "Affiche les paramètres et la description d'une commande."
+  })
+
+  cm.registerCommand({
+    name: 'listusers',
+    handler: listUsersCommand,
+    desc: "Liste les utilisateurs renvoyés par l'API d'EsiAuth."
   })
 }
