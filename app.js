@@ -1,14 +1,13 @@
-let Raven = require('raven')
+require('dotenv').config()
+const Raven = require('raven')
 //Raven.config('https://cc44c59ee43f4cb98184524f3406f750:3f7b9d8a03a64e56b2367f05ab7d8c1a@sentry.io/238392').install()
 
-let Axios = require('axios')
+const Axios = require('axios')
 const Emojis = require('node-emoji')
 const Discord = require('discord.js')
 const client = new Discord.Client()
 
-let config = require('./Config.js')
-
-Axios.defaults.baseURL = config.api.endpoint
+/*Axios.defaults.baseURL = config.api.endpoint
 Axios.post('/login', { login: config.api.user, password: config.api.pass })
 .then(res => {
   config.api.refreshToken = res.data.refreshToken
@@ -37,20 +36,17 @@ Axios.interceptors.request.use(req => {
     }
   })
   .catch(console.error)
-}, console.error)
+}, console.error)*/
 
+// Setup our own CommandManager
+const guildHelper = require('./GuildHelper.js')
+const commandManager = new (require('./CommandManager.js'))("!", guildHelper)
+
+// Setup Discord Client events
 client.on('ready', () => {
 	console.log(`Successfully logged in as ${client.user.username}!`)
-	for (let g of client.guilds) {
-		if (g[0] === config.guildID) {
-			config.guild = g[1]
-		}
-	}
-
-	config.guild.roles.forEach(r => config.roles[r.name] = r)
+  client.guilds.forEach(g => guildHelper.addGuild(g))
 })
-
-let commandManager = require('./CommandManager')
 client.on('message', commandManager.getListener())
-
-client.login(config.secret)
+client.on('error', console.error)
+client.login(process.env.DISCORD_KEY)

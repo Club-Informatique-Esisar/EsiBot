@@ -1,12 +1,19 @@
-let Raven = require('raven')
-let Emoji = require('node-emoji')
-let _ = require('lodash')
+const Emoji = require('node-emoji')
+const _ = require('lodash')
+const fs = require("fs")
+const colors = require("./colors.js")
 
 class CommandManager {
-	constructor(delimiter) {
-    this.config = require('./Config')
+	constructor(delimiter, guildHelper) {
+    this.guildHelper = guildHelper
     this.delimiter = delimiter
-		this.commands = new Map()
+    this.commands = new Map()
+    
+    let commandsFolder = require("path").join(__dirname, "commands")
+    fs.readdirSync(commandsFolder).forEach(file => {
+      require("./commands/" + file)(this)
+      console.log(`[CM] Loaded Command Group : '${file.substr(0, file.length - 3)}'`)
+    })
 	}
 
 	registerCommand(command) {
@@ -53,9 +60,15 @@ class CommandManager {
 
 			if (command) {
 				if (command.variableArgs || command.args == args.length - 1) {
-					command.handler(msg, args, this)
+          command
+          .handler({
+            msg: msg,
+            args: args,
+            cm: this,
+            emojis: Emoji,
+            colors: colors
+          })
           .catch(err => {
-            //Raven.captureException(err)
             console.log(err)
             msg.channel.send(`${Emoji.get('boom')} Une erreur sauvage apparait. ${Emoji.get('boom')}\nSi le problème persiste, contactez un administrateur.`)
           })
@@ -69,12 +82,4 @@ class CommandManager {
 	}
 }
 
-let cm = new CommandManager("!")
-
-let commandsFolder = require("path").join(__dirname, "commands")
-require("fs").readdirSync(commandsFolder).forEach(function(file) {
-	require("./commands/" + file)(cm)
-	console.log(`[ComGroup] Loaded : '${file.substr(0, file.length - 3)}'`)
-})
-
-module.exports = cm
+module.exports = CommandManager
