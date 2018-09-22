@@ -60,8 +60,7 @@ class CommandManager {
 
 			if (command) {
 				if (command.variableArgs || command.args == args.length - 1) {
-          command
-          .handler({
+          command.handler({
             msg: msg,
             args: args,
             cm: this,

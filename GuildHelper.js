@@ -3,17 +3,23 @@ class GuildHelper {
     this.guilds = {}
     this._esiguild = {
       instance: null,
-      roles: null
+      roles: {}
     }
   }
   
-  addGuild(guild) {
-    this.guilds[guild[0]] = guild[1]
+  addGuild(guild, id) {
+    console.log(`[Guild] Joined ${guild} (ID: ${id})`)
+    this.guilds[id] = guild
 
     // Direct reference storage for ESIGUILD
-    if (guild[0] === process.env.ESIGUILD_ID) {
-      this._esiguild.instance = guild[1]
-      guild[1].roles.forEach(r => this._esiguild.roles[r.name] = r)
+    if (id === process.env.ESIGUILD_ID) {
+      this._esiguild.instance = guild
+      guild.roles.forEach((role, id) => {
+        this._esiguild.roles[role.name] = role
+      })
+
+      console.log(`[EsiGuild] Roles: ${guild.roles.map(v => v.name).join(", ")}`)
+      console.log(`[EsiGuild] Emojis: ${guild.emojis.map(v => v.name).join(", ")}`)
 		}
   }
   

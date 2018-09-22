@@ -44,8 +44,8 @@ const commandManager = new (require('./CommandManager.js'))("!", guildHelper)
 
 // Setup Discord Client events
 client.on('ready', () => {
-	console.log(`Successfully logged in as ${client.user.username}!`)
-  client.guilds.forEach(g => guildHelper.addGuild(g))
+  client.guilds.forEach((guild, id) => guildHelper.addGuild(guild, id))
+  console.log(`[Success] Logged in as ${client.user.username} and ready to comply!`)
 })
 client.on('message', commandManager.getListener())
 client.on('error', console.error)
