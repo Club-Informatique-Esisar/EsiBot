@@ -1,21 +1,21 @@
 const Axios = require('axios')
 
-async function aideCommand({ msg, cm, colors }) {
-  await msg.channel.send({
+async function aideCommand({ message, manager, colors }) {
+  await message.channel.send({
     embed: {
       title: `**Liste des commandes**`,
       color: colors.default,
       description:
         `Utilisez !man <commande> pour afficher l'aide spécifique à une commande.\n\n` +
-        Array.from(cm.commands.values()).reduce((l, v) => {
+        Array.from(manager.commands.values()).reduce((l, v) => {
           return l + `!${v.name} ${v.params}\n`
         }, '')
     }
   })
 }
 
-async function manCommand({ msg, args, cm, colors }) {
-	let command = cm.commands.get(args[1])
+async function manCommand({ message, args, manager, colors }) {
+	let command = manager.commands.get(args[1])
 	if (command) {
     let fields = [{
       "name": "Description",
@@ -29,7 +29,7 @@ async function manCommand({ msg, args, cm, colors }) {
       })
     }
 
-    await msg.channel.send({
+    await message.channel.send({
       embed: {
         title: `**!${args[1]}**`,
         color: colors.default,
@@ -37,17 +37,17 @@ async function manCommand({ msg, args, cm, colors }) {
       }
     })
 	} else {
-    await msg.channel.send(`La commande **!${args[1]}** est inconnue.`)
+    await message.channel.send(`La commande **!${args[1]}** est inconnue.`)
   }
 }
 
-async function listUsersCommand({ msg }) {
+async function listUsersCommand({ message }) {
   const response = await Axios.get('/user')
   let liste = ''
   response.data.forEach(user => {
     liste += `- ${user.username}\n`
   });
-  await msg.channel.send('**Liste des utilisateurs :**\n' + liste)
+  await message.channel.send('**Liste des utilisateurs :**\n' + liste)
 }
 
 module.exports = function (cm) {
