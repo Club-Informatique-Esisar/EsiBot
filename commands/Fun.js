@@ -1,26 +1,3 @@
-function scrambleCommand(msg, args) {
-    let members = Constants.EsiGuild.members
-    let ids = members.keyArray().slice()
-    CGFun.shuffle(ids)
-
-    let i = 0
-    for(let id of members.keyArray()) {
-        if(members.get(id).user.username === "NoNiMad") continue
-
-        console.log(`${members.get(id).user.username} (${id}) => ${members.get(ids[i]).user.username} (${ids[i]})`)
-        members.get(id).setNickname(members.get(ids[i]).user.username).catch(console.error)
-        i++
-    }
-}
-
-function clearNamesCommand(msg, args) {
-    let members = Constants.EsiGuild.members
-    for(let id of members.keyArray()) {
-        if(members.get(id).user.username === "NoNiMad") continue
-        members.get(id).setNickname("").catch(console.error)
-    }
-}
-
 function shuffle(a) {
     for (let i = a.length; i; i--) {
         let j = Math.floor(Math.random() * i)
@@ -28,16 +5,26 @@ function shuffle(a) {
     }
 }
 
-module.exports = function (cm) {
-    /*
-    cm.registerCommand({
-      name: 'scramble',
-      handler: scrambleCommand
-    })
+async function randomEmojiCommand({ message, args, emojis }) {
+  let str = ''
+  for (let i = 0; i < Math.min(+args[0], 100); i++) {
+    str += emojis.random().emoji
+  }
+  message.channel.send(str)
+}
 
-    cm.registerCommand({
-      name: 'clearnames',
-      handler: clearNamesCommand
-    })
-    */
+module.exports = function (cm) {
+  cm.registerCommand({
+    name: 'random',
+    desc: 'Plein de choses aléatoires',
+    subcommands: [
+      {
+        name: 'emoji',
+        handler: randomEmojiCommand,
+        desc: `*Le Monde des Emojis* - 2.6/10 IMDB.com`,
+        args: 1,
+        params: '<count[0-100]>'
+      }
+    ]
+  })
 }

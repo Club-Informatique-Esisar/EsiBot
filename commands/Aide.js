@@ -1,19 +1,21 @@
-async function aideCommand(msg, args, cm) {
-  await msg.channel.send({
-    "embed": {
-      "title": `**Liste des commandes**`,
-      "color": cm.config.embedColor,
-      "description":
+const Axios = require('axios')
+
+async function aideCommand({ message, manager, colors }) {
+  await message.channel.send({
+    embed: {
+      title: `**Liste des commandes**`,
+      color: colors.default,
+      description:
         `Utilisez !man <commande> pour afficher l'aide spécifique à une commande.\n\n` +
-        Array.from(cm.commands.values()).reduce((l, v) => {
+        Array.from(manager.commands.values()).reduce((l, v) => {
           return l + `!${v.name} ${v.params}\n`
         }, '')
     }
   })
 }
 
-async function manCommand(msg, args, cm) {
-	let command = cm.commands.get(args[1])
+async function manCommand({ message, args, manager, colors }) {
+	let command = manager.commands.get(args[1])
 	if (command) {
     let fields = [{
       "name": "Description",
@@ -27,16 +29,33 @@ async function manCommand(msg, args, cm) {
       })
     }
 
-    await msg.channel.send({
-      "embed": {
-        "title": `**!${args[1]}**`,
-        "color": cm.config.embedColor,
-        "fields": fields
+    await message.channel.send({
+      embed: {
+        title: `**!${args[1]}**`,
+        color: colors.default,
+        fields: fields
       }
     })
 	} else {
-    await msg.channel.send(`La commande **!${args[1]}** est inconnue.`)
+    await message.channel.send(`La commande **!${args[1]}** est inconnue.`)
   }
+}
+
+async function searchUserCommand({ message, args, colors, emojis }) {
+  const status = await message.channel.send(`${emojis.get('arrows_counterclockwise')} Recherche en cours...`)
+  let res = await Axios.post('/user/search', { query: args[0] })
+  await status.edit({
+    embed: {
+      title: `**Résultat de la recherche pour "${args[0]}"**`,
+      color: colors.default,
+      description: res.data.reduce((desc, val) => {
+        if(val.discord_id !== null)
+          return `${desc}${val.first_name} ${val.last_name} (${val.promo}) <@${val.discord_id}>\n`
+        else
+          return `${desc}${val.first_name} ${val.last_name} (${val.promo})\n`
+      }, '')
+    }
+  })
 }
 
 module.exports = function (cm) {
@@ -52,5 +71,13 @@ module.exports = function (cm) {
     args: 1,
     params: '<commande>',
     desc: "Affiche les paramètres et la description d'une commande."
+  })
+
+  cm.registerCommand({
+    name: 'cherche',
+    handler: searchUserCommand,
+    args: 1,
+    params: '<requête>',
+    desc: "Recherche une personne dans la base d'EsiAuth."
   })
 }

@@ -1,47 +1,52 @@
-let Emojis = require('node-emoji')
-let Axios = require('axios')
+const Axios = require('axios')
 
-async function validateCommand(msg, args, cm) {
-  await msg.delete()
+async function validateCommand({ message, args, manager, emojis }) {
+  const status = await message.channel.send(`${emojis.get('arrows_counterclockwise')} Demande de validation prise en compte...`)
 
-  let status = await msg.channel.send(`${Emojis.get('arrows_counterclockwise')} Validation en cours...`)
-  if (msg.member.roles.has(cm.config.roles['Validé'])) {
-    return status.edit(`${Emojis.get('no_entry_sign')} Ton compte est déjà validé`)
+  try {
+    // If it's an email
+    if (args[0].indexOf('@') > -1) {
+      await Axios.post('/user/discord/send', { discord_id: message.author.id, mail: args[0] })
+      await status.edit(`${emojis.get('white_check_mark')} Un mail avec le code de validation vous a été envoyé !`)
+    } else {
+      let res = await Axios.post('/user/discord/link', { discord_id: message.author.id, token: args[0] })
+      let promo = res.data.split('-')[0]
+      await status.edit(`${emojis.get('arrows_counterclockwise')} Token valide, votre promotion : **${promo}**`)
+      await message.member.setRoles([manager.guildHelper.esiroleID(promo), manager.guildHelper.esiroleID('Validé')])
+      await status.edit(`${emojis.get('white_check_mark')} Validation réussie !`)
+    }    
+  } catch (err) {
+    if (err.response) {
+      const e = emojis.get('no_entry_sign')
+      switch (err.response.data.error) {
+        case "NO_ACCOUNT_ESISAR":
+          await status.edit(`${e} Tu es un(e) Esisarien(ne) sans compte EsiAuth, ce n'est pas normal ! Contacte un admin.`)// Contactons un <@&${manager.guildHelper.esiroleID('admin')}>.`)
+          break;
+        case "NO_ACCOUNT":
+          await status.edit(`${e} Aucun compte trouvé. Tu peux en créer un en tant qu'externe sur https://esiauth.esisariens.org.`)
+          break;
+        case "TOKEN_EXISTS":
+          await status.edit(`${e} Une procédure de validation est déjà en cours pour ce mail.`)
+          break;
+        case "ALREADY_LINKED":
+          await status.edit(`${e} Cette adresse mail possède déjà un compte Discord lié.`)
+          break;
+        case "NO_TOKEN":
+          await status.edit(`${e} Ce code ne correspond à aucune validation en cours.`)
+          break;
+      }
+    } else {
+      throw err
+    }
   }
-
-  let res = await Axios.post('/login', { login: args[1], password: args[2] })
-  if (res.data.error !== undefined) {
-    return status.edit(`${Emojis.get('no_entry_sign')} ${res.data.error}`)
-  }
-
-  let instance = Axios.create({
-    headers: { 'Authorization': `Bearer ${res.data.accessToken}` }
-  })
-
-  status.edit(`${Emojis.get('white_check_mark')} Connection réussie\n`)
-
-  if (res.data.user.promo === null) {
-    return status.edit(`${Emojis.get('no_entry_sign')} Aucune promo trouvée`)
-  }
-
-  let promoRes = await instance.get(`/promo/${res.data.user.promo}`)
-  status.edit(`${Emojis.get('white_check_mark')} Votre promotion : ${promoRes.data.name}`)
-
-  let linkRes = await instance.post('/user/linkDiscord', { discordID: msg.author.id })
-  if (linkRes.data.error !== undefined) {
-    return status.edit(`${Emojis.get('no_entry_sign')} ${linkRes.data.error}`)
-  }
-
-  await msg.member.addRoles([ cm.config.roles[promoRes.data.name], cm.config.roles['Validé'] ])
-  status.edit(`${Emojis.get('white_check_mark')} Validation réussie !`)
 }
 
 module.exports = function(cm) {
   cm.registerCommand({
+    args: 1,
     name: 'valider',
     handler: validateCommand,
-    args: 2,
-    params: '<pseudo> <mot de passe>',
+    params: '<mail>',
     desc: 'Permet de lier un compte EsiAuth à un compte Discord. Nécessite que le compte Discord soit renseigné sur le compte EsiAuth.'
   })
 }
