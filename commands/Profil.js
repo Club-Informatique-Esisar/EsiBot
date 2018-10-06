@@ -63,7 +63,7 @@ async function profilCommand(msg, args, cm) {
 }
 
 module.exports = function (cm) {
-  cm.registerCommand({
+  /*cm.registerCommand({
     name: 'profil',
     handler: profilCommand,
     args: 1,
@@ -74,5 +74,5 @@ module.exports = function (cm) {
     name: 'pset',
     handler: psetCommand,
     params: '(nom|steam|battlenet|lol|minecraft) <valeur>'
-  })
+  })*/
 }
