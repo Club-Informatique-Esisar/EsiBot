@@ -26,6 +26,10 @@ class GuildHelper {
   get esiguild() {
     return this._esiguild.instance
   }
+
+  esiroleID(name) {
+    return this._esiguild.roles[name].id
+  }
 }
 
 const instance = new GuildHelper()
