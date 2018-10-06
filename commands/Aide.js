@@ -41,13 +41,21 @@ async function manCommand({ message, args, manager, colors }) {
   }
 }
 
-async function listUsersCommand({ message }) {
-  const response = await Axios.get('/user')
-  let liste = ''
-  response.data.forEach(user => {
-    liste += `- ${user.username}\n`
-  });
-  await message.channel.send('**Liste des utilisateurs :**\n' + liste)
+async function searchUserCommand({ message, args, colors, emojis }) {
+  const status = await message.channel.send(`${emojis.get('arrows_counterclockwise')} Recherche en cours...`)
+  let res = await Axios.post('/user/search', { query: args[0] })
+  await status.edit({
+    embed: {
+      title: `**Résultat de la recherche pour "${args[0]}"**`,
+      color: colors.default,
+      description: res.data.reduce((desc, val) => {
+        if(val.discord_id !== null)
+          return `${desc}${val.first_name} ${val.last_name} (${val.promo}) <@${val.discord_id}>\n`
+        else
+          return `${desc}${val.first_name} ${val.last_name} (${val.promo})\n`
+      }, '')
+    }
+  })
 }
 
 module.exports = function (cm) {
@@ -66,8 +74,10 @@ module.exports = function (cm) {
   })
 
   cm.registerCommand({
-    name: 'listusers',
-    handler: listUsersCommand,
-    desc: "Liste les utilisateurs renvoyés par l'API d'EsiAuth."
+    name: 'cherche',
+    handler: searchUserCommand,
+    args: 1,
+    params: '<requête>',
+    desc: "Recherche une personne dans la base d'EsiAuth."
   })
 }
