@@ -7,7 +7,7 @@ async function validateCommand({ message, args, manager, emojis }) {
     // If it's an email
     if (args[0].indexOf('@') > -1) {
       await Axios.post('/user/discord/send', { discord_id: message.author.id, mail: args[0] })
-      await status.edit(`${emojis.get('white_check_mark')} Un mail avec le code de validation vous a été envoyé !`)
+      await status.edit(`${emojis.get('white_check_mark')} Un mail avec le code de validation vous a été envoyé ! Utilisez !valider <code> pour terminer le processus.`)
     } else {
       let res = await Axios.post('/user/discord/link', { discord_id: message.author.id, token: args[0] })
       let promo = res.data.split('-')[0]
