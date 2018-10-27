@@ -62,7 +62,8 @@ module.exports = function (cm) {
   cm.registerCommand({
     name: 'aide',
     handler: aideCommand,
-    desc: "Affiche la liste des commandes disponibles."
+    desc: "Affiche la liste des commandes disponibles.",
+    esiguildOnly: false
   })
 
   cm.registerCommand({
@@ -70,7 +71,8 @@ module.exports = function (cm) {
     handler: manCommand,
     args: 1,
     params: '<commande>',
-    desc: "Affiche les paramètres et la description d'une commande."
+    desc: "Affiche les paramètres et la description d'une commande.",
+    esiguildOnly: false
   })
 
   cm.registerCommand({
@@ -78,6 +80,7 @@ module.exports = function (cm) {
     handler: searchUserCommand,
     args: 1,
     params: '<requête>',
-    desc: "Recherche une personne dans la base d'EsiAuth."
+    desc: "Recherche une personne dans la base d'EsiAuth.",
+    esiguildOnly: false
   })
 }
