@@ -12,7 +12,7 @@ Axios.defaults.headers.common['Authorization'] = 'Bearer ' + process.env.API_KEY
 
 // Setup our own CommandManager
 const guildHelper = require('./GuildHelper.js')
-const commandManager = new (require('./CommandManager.js'))("!", guildHelper)
+const commandManager = new (require('./CommandManager.js'))(client, process.env.COMMAND_DELIMITER, guildHelper)
 
 // Setup Discord Client events
 client.on('ready', () => {

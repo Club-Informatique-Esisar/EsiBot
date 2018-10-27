@@ -4,13 +4,15 @@ const fs = require("fs")
 const colors = require("./colors.js")
 
 class CommandManager {
-	constructor(delimiter, guildHelper) {
+	constructor(client, delimiter, guildHelper) {
+    this.client = client
     this.guildHelper = guildHelper
     this.delimiter = delimiter
     this.commands = new Map()
     
     let commandsFolder = require("path").join(__dirname, "commands")
     fs.readdirSync(commandsFolder).forEach(file => {
+      if (!file.endsWith(".js")) return
       require("./commands/" + file)(this)
       console.log(`[CM] Loaded Command Group : '${file.substr(0, file.length - 3)}'`)
     })
@@ -146,7 +148,12 @@ class CommandManager {
           })
           .catch(err => {
             //Raven.captureException(err)
-            console.log(err)
+            if (err.response) {
+              console.error(err.response.data)
+            } else {
+              console.error(err)
+            }
+            
             msg.channel.send(`${Emoji.get('boom')} Une erreur sauvage apparait. ${Emoji.get('boom')}\nSi le problème persiste, contactez un administrateur.`)
           })
         } else {
