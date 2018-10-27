@@ -36,7 +36,8 @@ class CommandManager {
         variableArgs: false,
         args: 0,
         params: '',
-        desc: '*Aucune description disponible*'
+        desc: '*Aucune description disponible*',
+        esiguildOnly: true
       })
 
       this.commands.set(command.name, command)
@@ -47,7 +48,8 @@ class CommandManager {
         desc: '*Aucune description disponible*',
         params: '(' + command.subcommands.slice(1).reduce((l, v) => {
           return l + `|${v.name}`
-        }, command.subcommands[0].name) + ') <...>'
+        }, command.subcommands[0].name) + ') <...>',
+        esiguildOnly: true
       })
 
       let helpDesc = command.subcommands.reduce((l, v) => {
@@ -137,6 +139,10 @@ class CommandManager {
       args = args.slice(1)
 
       if (command) {
+        if (command.esiguildOnly && msg.guild.id !== process.env.ESIGUILD_ID) {
+          return msg.channel.send(`La commande **${command.name}** n'est utilisable que sur le Discord Esisariens`)
+        }
+
         if (command.variableArgs || command.args == args.length) {
           command.handler({
             command: command,
