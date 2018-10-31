@@ -4,13 +4,15 @@ const fs = require("fs")
 const colors = require("./colors.js")
 
 class CommandManager {
-	constructor(delimiter, guildHelper) {
+	constructor(client, delimiter, guildHelper) {
+    this.client = client
     this.guildHelper = guildHelper
     this.delimiter = delimiter
     this.commands = new Map()
     
     let commandsFolder = require("path").join(__dirname, "commands")
     fs.readdirSync(commandsFolder).forEach(file => {
+      if (!file.endsWith(".js")) return
       require("./commands/" + file)(this)
       console.log(`[CM] Loaded Command Group : '${file.substr(0, file.length - 3)}'`)
     })
@@ -34,7 +36,8 @@ class CommandManager {
         variableArgs: false,
         args: 0,
         params: '',
-        desc: '*Aucune description disponible*'
+        desc: '*Aucune description disponible*',
+        esiguildOnly: true
       })
 
       this.commands.set(command.name, command)
@@ -45,7 +48,8 @@ class CommandManager {
         desc: '*Aucune description disponible*',
         params: '(' + command.subcommands.slice(1).reduce((l, v) => {
           return l + `|${v.name}`
-        }, command.subcommands[0].name) + ') <...>'
+        }, command.subcommands[0].name) + ') <...>',
+        esiguildOnly: true
       })
 
       let helpDesc = command.subcommands.reduce((l, v) => {
@@ -135,6 +139,10 @@ class CommandManager {
       args = args.slice(1)
 
       if (command) {
+        if (command.esiguildOnly && msg.guild.id !== process.env.ESIGUILD_ID) {
+          return msg.channel.send(`La commande **${command.name}** n'est utilisable que sur le Discord Esisariens`)
+        }
+
         if (command.variableArgs || command.args == args.length) {
           command.handler({
             command: command,
@@ -146,7 +154,12 @@ class CommandManager {
           })
           .catch(err => {
             //Raven.captureException(err)
-            console.log(err)
+            if (err.response) {
+              console.error(err.response.data)
+            } else {
+              console.error(err)
+            }
+            
             msg.channel.send(`${Emoji.get('boom')} Une erreur sauvage apparait. ${Emoji.get('boom')}\nSi le problème persiste, contactez un administrateur.`)
           })
         } else {

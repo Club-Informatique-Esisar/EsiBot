@@ -15,7 +15,7 @@ async function aideCommand({ message, manager, colors }) {
 }
 
 async function manCommand({ message, args, manager, colors }) {
-	let command = manager.commands.get(args[1])
+	let command = manager.commands.get(args[0])
 	if (command) {
     let fields = [{
       "name": "Description",
@@ -31,13 +31,13 @@ async function manCommand({ message, args, manager, colors }) {
 
     await message.channel.send({
       embed: {
-        title: `**!${args[1]}**`,
+        title: `**!${args[0]}**`,
         color: colors.default,
         fields: fields
       }
     })
 	} else {
-    await message.channel.send(`La commande **!${args[1]}** est inconnue.`)
+    await message.channel.send(`La commande **!${args[0]}** est inconnue.`)
   }
 }
 
@@ -62,7 +62,8 @@ module.exports = function (cm) {
   cm.registerCommand({
     name: 'aide',
     handler: aideCommand,
-    desc: "Affiche la liste des commandes disponibles."
+    desc: "Affiche la liste des commandes disponibles.",
+    esiguildOnly: false
   })
 
   cm.registerCommand({
@@ -70,7 +71,8 @@ module.exports = function (cm) {
     handler: manCommand,
     args: 1,
     params: '<commande>',
-    desc: "Affiche les paramètres et la description d'une commande."
+    desc: "Affiche les paramètres et la description d'une commande.",
+    esiguildOnly: false
   })
 
   cm.registerCommand({
@@ -78,6 +80,7 @@ module.exports = function (cm) {
     handler: searchUserCommand,
     args: 1,
     params: '<requête>',
-    desc: "Recherche une personne dans la base d'EsiAuth."
+    desc: "Recherche une personne dans la base d'EsiAuth.",
+    esiguildOnly: false
   })
 }
