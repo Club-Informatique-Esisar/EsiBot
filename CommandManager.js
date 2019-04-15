@@ -5,17 +5,17 @@ const colors = require("./colors.js")
 
 class CommandManager {
 	constructor(client, delimiter, guildHelper) {
-    this.client = client
-    this.guildHelper = guildHelper
-    this.delimiter = delimiter
-    this.commands = new Map()
-    
-    let commandsFolder = require("path").join(__dirname, "commands")
-    fs.readdirSync(commandsFolder).forEach(file => {
-      if (!file.endsWith(".js")) return
-      require("./commands/" + file)(this)
-      console.log(`[CM] Loaded Command Group : '${file.substr(0, file.length - 3)}'`)
-    })
+        this.client = client
+        this.guildHelper = guildHelper
+        this.delimiter = delimiter
+        this.commands = new Map()
+        
+        let commandsFolder = require("path").join(__dirname, "commands")
+        fs.readdirSync(commandsFolder).forEach(file => {
+        if (!file.endsWith(".js")) return
+        require("./commands/" + file)(this)
+        console.log(`[CM] Loaded Command Group : '${file.substr(0, file.length - 3)}'`)
+        })
 	}
 
   registerCommand(command) {
@@ -37,7 +37,8 @@ class CommandManager {
         args: 0,
         params: '',
         desc: '*Aucune description disponible*',
-        esiguildOnly: true
+        esiguildOnly: true,
+        needAdmin: false
       })
 
       this.commands.set(command.name, command)
@@ -49,7 +50,8 @@ class CommandManager {
         params: '(' + command.subcommands.slice(1).reduce((l, v) => {
           return l + `|${v.name}`
         }, command.subcommands[0].name) + ') <...>',
-        esiguildOnly: true
+        esiguildOnly: true,
+        needAdmin: false
       })
 
       let helpDesc = command.subcommands.reduce((l, v) => {
@@ -140,7 +142,11 @@ class CommandManager {
 
       if (command) {
         if (command.esiguildOnly && msg.guild.id !== process.env.ESIGUILD_ID) {
-          return msg.channel.send(`La commande **${command.name}** n'est utilisable que sur le Discord Esisariens`)
+            return msg.channel.send(`La commande **${command.name}** n'est utilisable que sur le Discord Esisariens`)
+        }
+
+        if (command.needAdmin && !msg.member.hasPermission("ADMINISTRATOR")) {
+            return msg.channel.send(`La commande **${command.name}** n'est utilisable que par un admin`)
         }
 
         if (command.variableArgs || command.args == args.length) {

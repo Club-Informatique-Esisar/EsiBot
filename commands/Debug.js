@@ -16,6 +16,7 @@ module.exports = function (cm) {
   cm.registerCommand({
     name: 'fixValide',
     desc: 'Remet le rôle Validé à ceux qui ont un rôle correspondant à une promotion',
-    handler: fixValideCommand
+    handler: fixValideCommand,
+    needAdmin: true
   })
 }

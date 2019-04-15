@@ -1,17 +1,25 @@
 const Axios = require('axios')
 
 async function aideCommand({ message, manager, colors }) {
-  await message.channel.send({
-    embed: {
-      title: `**Liste des commandes**`,
-      color: colors.default,
-      description:
-        `Utilisez !man <commande> pour afficher l'aide spécifique à une commande.\n\n` +
-        Array.from(manager.commands.values()).reduce((l, v) => {
-          return l + `!${v.name} ${v.params}\n`
+    let helpText = ""
+    if (message.member.hasPermission("ADMINISTRATOR")) {
+        helpText = Array.from(manager.commands.values()).reduce((l, v) => {
+            return l + `${v.needAdmin ? "**(Admin)** " : ""}!${v.name} ${v.params}\n`
+        }, '')
+    } else {
+        helpText = Array.from(manager.commands.values()).reduce((l, v) => {
+            return l + (!v.needAdmin ? `!${v.name} ${v.params}\n` : "")
         }, '')
     }
-  })
+
+    await message.channel.send({
+        embed: {
+        title: `**Liste des commandes**`,
+        color: colors.default,
+        description:
+            `Utilisez !man <commande> pour afficher l'aide spécifique à une commande.\n\n` + helpText
+        }
+    })
 }
 
 async function manCommand({ message, args, manager, colors }) {
@@ -81,6 +89,7 @@ module.exports = function (cm) {
     args: 1,
     params: '<requête>',
     desc: "Recherche une personne dans la base d'EsiAuth.",
-    esiguildOnly: false
+    esiguildOnly: false,
+    needAdmin: true
   })
 }
