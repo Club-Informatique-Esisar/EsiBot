@@ -1,5 +1,6 @@
-const sqlite3 = require('sqlite3').verbose()
-const db = new sqlite3.Database('bets.sqlite')
+const db = require("../SQLite.js")("bets.sqlite")
+
+//#region Create Table
 
 db.run(`
 CREATE TABLE IF NOT EXISTS match (
@@ -32,21 +33,57 @@ CREATE TABLE IF NOT EXISTS user (
 );
 `)
 
+//#endregion
+
+async function createUser(id) {
+    await db.run("INSERT INTO user (discord_id, amount, bet_won) VALUES (?, ?, ?);", id, 100, 0)
+}
+
+async function initCommand({ message, args }) {
+    //message.guild
+    let rows = await db.all("SELECT * FROM user")
+    let liste = "Users:\n"
+    for (let row of rows) {
+        liste += `${row.discord_id} - ${row.amount} EsiCoins\n`
+    }
+    message.channel.send(liste)
+}
+
 async function usersCommand({ message, args, emojis }) {
-    db.all("SELECT * FROM user", function(err, rows) {
-        let liste = "Users:\n"
-        for (let row of rows) {
-            liste += `${row.discord_id} - ${row.amount} EsiCoins\n`
-        }
-        message.channel.send(liste)
-    })
+    let rows = await db.all("SELECT * FROM user")
+    let liste = "Users:\n"
+    for (let row of rows) {
+        let member = await message.guild.fetchMember(row.discord_id)
+        liste += `${member.user.username} - ${row.amount} EsiCoins\n`
+    }
+    await message.channel.send(liste)
 }
 
 async function queryCommand({ args }) {
     db.run(args[0])
 }
 
+async function amountCommand({ message }) {
+    let memberId = message.member.id
+    let res = await db.get("SELECT * FROM user WHERE discord_id = ?", memberId)
+    if (res !== undefined) {
+        await message.channel.send(`Vous avez ${res.amount} EsiCoins sur votre compte !`)
+    } else {
+        await createUser(memberId)
+        await message.channel.send(`Votre compte vient d'être créé et a été crédité de ${res.amount} EsiCoins !`)
+    }
+}
+
 module.exports = function (cm) {
+    cm.registerCommand({
+        name: 'bet-init',
+        handler: initCommand,
+        desc: 'Donne <n> argent à tout le monde et met tout le monde dans la db',
+        args: 1,
+        esiguildOnly: false,
+        needAdmin: true
+    })
+
     cm.registerCommand({
         name: 'bet-users',
         handler: usersCommand,
@@ -54,6 +91,14 @@ module.exports = function (cm) {
         args: 0,
         esiguildOnly: false,
         needAdmin: true
+    })
+
+    cm.registerCommand({
+        name: 'amount',
+        handler: amountCommand,
+        desc: 'Affiche le nombre d\'EsiCoin que vous possédez',
+        args: 0,
+        esiguildOnly: false
     })
 
     cm.registerCommand({
