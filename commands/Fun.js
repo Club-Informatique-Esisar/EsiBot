@@ -23,8 +23,10 @@ module.exports = function (cm) {
         handler: randomEmojiCommand,
         desc: `*Le Monde des Emojis* - 2.6/10 IMDB.com`,
         args: 1,
-        params: '<count[0-100]>'
+        params: '<count[0-100]>',
+        esiguildOnly: false
       }
-    ]
+    ],
+    esiguildOnly: false
   })
 }
