@@ -9,9 +9,10 @@
     "dotenv": "^6.0.0",
     "erlpack": "github:hammerandchisel/erlpack",
     "lodash": "^4.17.11",
-    "node-emoji": "^1.8.1",
+    "node-emoji": "^1.10.0",
     "raven": "^2.6.4",
     "sodium": "^2.0.1",
+    "sqlite3": "^4.0.6",
     "uws": "^8.14.1"
   },
   "author": "NoNiMad",
