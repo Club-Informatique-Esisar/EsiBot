@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS match (
 
 db.run(`
 CREATE TABLE IF NOT EXISTS bet (
-    user_id INTEGER PRIMARY KEY,
+    user_id INTEGER NOT NULL,
     match_id INTEGER NOT NULL,
     team INTEGER NOT NULL,
     amount INTEGER NOT NULL,
@@ -83,7 +83,14 @@ async function initCommand({ message }) {
 }
 
 async function redeemCommand({ message, args }) {
-    await db.run("UPDATE user SET amount = ? WHERE amount = 0", +args[0])
+    await db.run(`UPDATE user
+        SET amount = ?
+        WHERE amount = 0
+            AND NOT EXISTS (
+                SELECT * FROM bet
+                WHERE bet.user_id = user.user_id
+                    AND bet.match_id = ?
+            )`, +args[0], +args[1])
     await message.channel.send("Les comptes vides ont bien été crédités !")
 }
 
@@ -92,7 +99,7 @@ async function newMatchCommand({ message, args }) {
     await message.channel.send("Nouveau match créé!")
 }
 
-async function listMatchCommand({ message }) {
+async function listMatchCommand({ message, colors }) {
     let isAdmin = message.member.hasPermission("ADMINISTRATOR")
     let rows = []
 
@@ -101,11 +108,18 @@ async function listMatchCommand({ message }) {
     else
         rows = await db.all("SELECT * FROM match WHERE state = 0 ORDER BY match_id DESC")
 
-    let liste = "Liste des matchs en cours :\n"
+    let liste = ""
     for (let row of rows) {
-        liste += getMatchDesc(row, isAdmin)
+        liste += getMatchDesc(row, isAdmin) + "\n"
     }
-    await message.channel.send(liste)
+    
+    await message.channel.send({
+        embed: {
+            title: `Liste des matchs en cours`,
+            color: colors.default,
+            description: liste
+        }
+    })
 }
 
 async function setStateCommand({ message, args }) {
@@ -206,27 +220,73 @@ async function resultCommand({ message, args }) {
     if (winner !== 0)
         await message.channel.send(`L'équipe *${winnerStr}* a été déclarée vainqueur pour le match ${getMatchDesc(match)} ! Les gains ont été répartis entre les parieurs.`)
     else
-        await message.channel.send(`Le match ${getMatchDesc(match)} s'est soldé par une égalité ! Les gains ont été répartis entre les parieurs.`)
+        await message.channel.send(`Le match ${getMatchDesc(match)} s'est soldé par une égalité ! Dommage !`)
 }
 
-async function topCommand({ message }) {
-    let rows = await db.all("SELECT * FROM user ORDER BY amount DESC LIMIT 10")
-    let liste = "Top 10 des parieurs par EsiCoins :\n"
+async function topCommand({ message, colors }) {
+    let rows = await db.all("SELECT * FROM user ORDER BY amount DESC LIMIT 20")
+    let liste = ""
     for (let row of rows) {
         let member = await message.guild.fetchMember(row.discord_id)
         liste += `${member.user.username} - ${row.amount} EsiCoins\n`
     }
-    await message.channel.send(liste)
+    await message.channel.send({
+        embed: {
+            title: `Top 20 des parieurs par EsiCoins`,
+            color: colors.default,
+            description: liste
+        }
+    })
 }
 
-async function topBetCommand({ message }) {
-    let rows = await db.all("SELECT * FROM user ORDER BY amount DESC LIMIT 10")
-    let liste = "Top 10 des parieurs par nombre de paris gagnés :\n"
+async function topBetCommand({ message, colors }) {
+    let rows = await db.all(`SELECT discord_id, COUNT(*) as won
+        FROM bet
+        LEFT JOIN user ON user.user_id = bet.user_id
+        LEFT JOIN match ON match.match_id = bet.match_id
+        WHERE match.state = bet.team + 1
+        GROUP BY user.user_id
+        ORDER BY won DESC LIMIT 20`)
+    let liste = ""
     for (let row of rows) {
         let member = await message.guild.fetchMember(row.discord_id)
-        liste += `${member.user.username} - ${row.amount} EsiCoins\n`
+        liste += `${member.user.username} - ${row.won} pari(s) gagné(s)\n`
     }
-    await message.channel.send(liste)
+    await message.channel.send({
+        embed: {
+            title: `Top 20 des parieurs par nombre de paris gagnés`,
+            color: colors.default,
+            description: liste
+        }
+    })
+}
+
+async function showBetCommand({ message, args, colors }) {
+    let matchId = +args[0]
+    let match = await getMatch(matchId)
+    
+    if (match === undefined) {
+        await message.channel.send("Match introuvable.")
+        return
+    }
+    
+    let rows = await db.all(`SELECT discord_id, team, bet.amount as amount
+        FROM bet
+        LEFT JOIN user ON user.user_id = bet.user_id
+        WHERE match_id = ?
+        ORDER BY team, bet.amount DESC`, matchId)
+    let liste = ""
+    for (let row of rows) {
+        let member = await message.guild.fetchMember(row.discord_id)
+        liste += `**${member.user.username}** a parié **${row.amount}** sur **${row.team == 1 ? match.team1 : match.team2}**\n`
+    }
+    await message.channel.send({
+        embed: {
+            title: `Paris en cours sur le match **${match.team1} - ${match.team2}**`,
+            color: colors.default,
+            description: liste
+        }
+    })
 }
 
 async function amountCommand({ message }) {
@@ -236,7 +296,7 @@ async function amountCommand({ message }) {
         await message.channel.send(`Vous avez ${res.amount} EsiCoins sur votre compte !`)
     } else {
         await createUser(memberId)
-        await message.channel.send(`Votre compte vient d'être créé et a été crédité de ${res.amount} EsiCoins !`)
+        await message.channel.send(`Votre compte a bien été créé et a été crédité de 100 EsiCoins !`)
     }
 }
 
@@ -244,24 +304,32 @@ async function betCommand({ message, args }) {
     let matchId = +args[0]
     let team = +args[1]
     let amount = +args[2]
+    
+    if (amount <= 0) {
+        await message.channel.send(`Impossible de faire un pari négatif ou nul !`)
+        return
+    }
 
     let memberId = message.member.id
     let user = await getUser(memberId)
-    let match = await getMatch(matchId)
-    let bet = await getBet(user.user_id, matchId)
-
+    
     if (user === undefined) {
-        await message.channel.send(`Vous n'avez pas de compte, faites "!bet amount" pour l'initialiser !`)
+        await createUser(memberId)
+        user = await getUser(memberId)
+        await message.channel.send(`Compte créé avec 100 EsiCoins.`)
+    }
+    
+    let match = await getMatch(matchId)
+    
+    if (match === undefined) {
+        await message.channel.send(`Le match ${matchId} n'existe pas !`)
         return
     }
+    
+    let bet = await getBet(user.user_id, matchId)
 
     if (bet !== undefined) {
         await message.channel.send(`Vous avez déjà misé sur ce match ! Si vous voulez modifier votre mise, faites d'abord !bet undoBet ${match.match_id}`)
-        return
-    }
-
-    if (match === undefined) {
-        await message.channel.send(`Le match ${matchId} n'existe pas !`)
         return
     }
 
@@ -282,12 +350,19 @@ async function betCommand({ message, args }) {
 
     await db.run("BEGIN TRANSACTION")
 
-    await db.run("UPDATE user SET amount = amount - ? WHERE user_id = ?", amount, user.user_id)
-    await db.run("INSERT INTO bet (user_id, match_id, team, amount) VALUES (?, ?, ?, ?)", user.user_id, match.match_id, team, amount)
-
-    await db.run("COMMIT")
-
-    await message.channel.send(`La mise suivante a bien été prise en compte :\n${amount} EsiCoins sur l'équipe ${team == 1 ? match.team1 : match.team2} du match ${match.match_id}`)
+    try {
+        await db.run("UPDATE user SET amount = amount - ? WHERE user_id = ?", amount, user.user_id)
+        await db.run("INSERT INTO bet (user_id, match_id, team, amount) VALUES (?, ?, ?, ?)", user.user_id, match.match_id, team, amount)
+        await db.run("COMMIT")
+        
+        await message.channel.send(`La mise suivante a bien été prise en compte : **${amount}** EsiCoins sur l'équipe **${team == 1 ? match.team1 : match.team2}** du match **${match.match_id}**`)
+    }
+    catch (err) {
+        console.error(err)
+        await db.run("ROLLBACK")
+        
+        await message.channel.send(`Stop faire nawak avec les commandes !`)
+    }
 }
 
 async function undoBetCommand({ message, args }) {
@@ -310,11 +385,19 @@ async function undoBetCommand({ message, args }) {
 
     await db.run("BEGIN TRANSACTION")
 
-    await db.run("DELETE FROM bet WHERE user_id = ? AND match_id = ?", user.user_id, match.match_id)
-    await db.run("UPDATE user SET amount = amount + ? WHERE user_id = ?", bet.amount, user.user_id)
-
-    await db.run("COMMIT")
-    await message.channel.send(`Votre mise de ${bet.amount} sur le match ${match.match_id} a bien été annulée.`)
+    try {
+        await db.run("DELETE FROM bet WHERE user_id = ? AND match_id = ?", user.user_id, match.match_id)
+        await db.run("UPDATE user SET amount = amount + ? WHERE user_id = ?", bet.amount, user.user_id)
+        
+        await db.run("COMMIT")
+        
+        await message.channel.send(`Votre mise de ${bet.amount} sur le match ${match.match_id} a bien été annulée.`)
+    } catch (err) {
+        console.error(err)
+        await db.run("ROLLBACK")
+        
+        await message.channel.send(`Stop faire nawak avec les commandes !`)
+    }
 }
 
 module.exports = function (cm) {
@@ -334,9 +417,9 @@ module.exports = function (cm) {
             {
                 name: 'redeem',
                 handler: redeemCommand,
-                desc: `Redonne <amount> à ceux qui n'ont plus d'EsiCoins`,
-                args: 1,
-                params: "<amount>",
+                desc: `Redonne <amount> à ceux qui n'ont plus d'EsiCoins, sauf s'ils ont parié sur <last_match>`,
+                args: 2,
+                params: "<amount> <last_match>",
                 esiguildOnly: false,
                 needAdmin: true
             },
@@ -387,6 +470,15 @@ module.exports = function (cm) {
                 name: 'topBets',
                 handler: topBetCommand,
                 desc: 'Affiche le classement par nombre de paris gagnés',
+                esiguildOnly: false,
+                needAdmin: true
+            },
+            {
+                name: 'showBets',
+                handler: showBetCommand,
+                desc: 'Affiche les paris pour un match donné',
+                args: 1,
+                params: "<matchId>",
                 esiguildOnly: false,
                 needAdmin: true
             },

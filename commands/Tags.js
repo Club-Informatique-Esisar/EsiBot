@@ -69,6 +69,7 @@ module.exports = function (cm) {
   cm.registerCommand({
     name: 'tags',
     desc: 'Les tags permettent de n\'obtenir que les news qui vous intéressent !',
+    variableArgs: true,
     subcommands: [
       {
         name: 'list',
