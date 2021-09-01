@@ -133,7 +133,7 @@ class CommandManager {
             return `La commande **${command.name}** n'est utilisable que sur le Discord Esisariens`
         }
 
-        if (command.needAdmin && !msg.member.hasPermission("ADMINISTRATOR")) {
+        if (command.needAdmin && !msg.member.permissions.has("ADMINISTRATOR")) {
             return `La commande **${command.name}** n'est utilisable que par un admin`
         }
 
