@@ -1,10 +1,13 @@
 require('dotenv').config()
-const Raven = require('raven')
-//Raven.config('https://cc44c59ee43f4cb98184524f3406f750:3f7b9d8a03a64e56b2367f05ab7d8c1a@sentry.io/238392').install()
 
 const Axios = require('axios')
 const Discord = require('discord.js')
-const client = new Discord.Client()
+const client = new Discord.Client({
+	intents: [
+		Discord.Intents.FLAGS.GUILDS,
+		Discord.Intents.FLAGS.GUILD_MESSAGES,
+	]
+})
 
 // Config Axios defaults
 Axios.defaults.baseURL = process.env.API_URL
@@ -15,10 +18,18 @@ const guildHelper = require('./GuildHelper.js')
 const commandManager = new (require('./CommandManager.js'))(client, process.env.COMMAND_DELIMITER, guildHelper)
 
 // Setup Discord Client events
-client.on('ready', () => {
-  client.guilds.forEach((guild, id) => guildHelper.addGuild(guild, id))
-  console.log(`[Success] Logged in as ${client.user.username} and ready to comply!`)
+client.once('ready', async () =>
+{
+	const guilds = await client.guilds.fetch()
+	for (const [id, guild] of guilds)
+	{
+		const realGuild = await guild.fetch()
+		await guildHelper.addGuild(id, realGuild)
+	}
+	console.log(`[Success] Logged in as ${client.user.username} and ready to comply!`)
 })
-client.on('message', commandManager.getListener())
+
+client.on('messageCreate', commandManager.getListener())
 client.on('error', console.error)
+
 client.login(process.env.DISCORD_KEY)

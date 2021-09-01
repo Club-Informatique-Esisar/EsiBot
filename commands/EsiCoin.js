@@ -114,11 +114,11 @@ async function listMatchCommand({ message, colors }) {
     }
     
     await message.channel.send({
-        embed: {
+        embeds: [{
             title: `Liste des matchs en cours`,
             color: colors.default,
             description: liste
-        }
+        }]
     })
 }
 
@@ -231,11 +231,11 @@ async function topCommand({ message, colors }) {
         liste += `${member.user.username} - ${row.amount} EsiCoins\n`
     }
     await message.channel.send({
-        embed: {
+        embeds: [{
             title: `Top 20 des parieurs par EsiCoins`,
             color: colors.default,
             description: liste
-        }
+        }]
     })
 }
 
@@ -253,11 +253,11 @@ async function topBetCommand({ message, colors }) {
         liste += `${member.user.username} - ${row.won} pari(s) gagné(s)\n`
     }
     await message.channel.send({
-        embed: {
+        embeds: [{
             title: `Top 20 des parieurs par nombre de paris gagnés`,
             color: colors.default,
             description: liste
-        }
+        }]
     })
 }
 
@@ -281,11 +281,11 @@ async function showBetCommand({ message, args, colors }) {
         liste += `**${member.user.username}** a parié **${row.amount}** sur **${row.team == 1 ? match.team1 : match.team2}**\n`
     }
     await message.channel.send({
-        embed: {
+        embeds: [{
             title: `Paris en cours sur le match **${match.team1} - ${match.team2}**`,
             color: colors.default,
             description: liste
-        }
+        }]
     })
 }
 
